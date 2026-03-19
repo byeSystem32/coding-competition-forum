@@ -49,9 +49,7 @@ export default function LandingPage() {
 
         {/* Subtitle */}
         <p className="text-base sm:text-lg text-white/40 max-w-md mb-12 leading-relaxed">
-          Compete. Create. Conquer.
-          <br />
-          The ultimate student coding competition.
+          Register your school below
         </p>
 
         {/* Register Button */}

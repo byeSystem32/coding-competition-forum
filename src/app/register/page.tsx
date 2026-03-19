@@ -369,7 +369,7 @@ export default function RegisterPage() {
                 ? `We sent a 6-digit code to ${email}`
                 : mode === "register"
                   ? "Enter your contact information to get started."
-                  : "Sign in with your email to access your dashboard."}
+                  : "Enter the email you registered with to access your dashboard."}
             </p>
           </div>
 
@@ -489,7 +489,7 @@ export default function RegisterPage() {
                     ) : (
                       <>
                         <LogIn className="w-4 h-4" />
-                        Send Verification Code
+                        Continue
                       </>
                     )}
                   </button>
