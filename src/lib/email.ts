@@ -1,20 +1,3 @@
-import nodemailer from "nodemailer";
-
-const port = Number(process.env.SMTP_PORT) || 587;
-
-const transporter = nodemailer.createTransport({
-  host: process.env.SMTP_HOST || "smtp.ethereal.email",
-  port,
-  secure: port === 465,
-  auth: {
-    user: process.env.SMTP_USER,
-    pass: process.env.SMTP_PASS,
-  },
-  tls: {
-    rejectUnauthorized: false,
-  },
-});
-
 export function generateVerificationCode(): string {
   return Math.floor(100000 + Math.random() * 900000).toString();
 }
@@ -35,19 +18,40 @@ export async function sendVerificationEmail(to: string, code: string, firstName:
     </div>
   `;
 
+  const RESEND_API_KEY = process.env.RESEND_API_KEY;
+
+  if (!RESEND_API_KEY) {
+    console.log(`[DEV] No RESEND_API_KEY set. Verification code for ${to}: ${code}`);
+    return { success: false, error: "No API key" };
+  }
+
   try {
-    const info = await transporter.sendMail({
-      from: process.env.EMAIL_FROM || "noreply@csn2026.com",
-      to,
-      subject: "CSN 2026 - Your Verification Code",
-      html,
+    const res = await fetch("https://api.resend.com/emails", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${RESEND_API_KEY}`,
+      },
+      body: JSON.stringify({
+        from: process.env.EMAIL_FROM || "CSN 2026 <onboarding@resend.dev>",
+        to: [to],
+        subject: "CSN 2026 - Your Verification Code",
+        html,
+      }),
     });
 
-    console.log("Verification email sent:", info.messageId);
-    return { success: true, messageId: info.messageId };
+    const data = await res.json();
+
+    if (!res.ok) {
+      console.error("Resend API error:", data);
+      console.log(`[DEV] Verification code for ${to}: ${code}`);
+      return { success: false, error: data };
+    }
+
+    console.log("Verification email sent:", data.id);
+    return { success: true, messageId: data.id };
   } catch (error) {
     console.error("Failed to send email:", error);
-    // In development, log the code so you can still test
     console.log(`[DEV] Verification code for ${to}: ${code}`);
     return { success: false, error };
   }
