@@ -31,6 +31,7 @@ export default function RegisterPage() {
 
   // Verification
   const [code, setCode] = useState("");
+  const [fallbackCode, setFallbackCode] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
@@ -68,6 +69,7 @@ export default function RegisterPage() {
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Registration failed");
 
+      if (data.code) setFallbackCode(data.code);
       setStep("verify");
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : "Something went wrong";
@@ -93,6 +95,7 @@ export default function RegisterPage() {
       if (!res.ok) throw new Error(data.error || "Login failed");
 
       setFirstName(data.firstName || "");
+      if (data.code) setFallbackCode(data.code);
       setStep("verify");
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : "Something went wrong";
@@ -187,7 +190,9 @@ export default function RegisterPage() {
             </h1>
             <p className="text-sm text-white/40">
               {step === "verify"
-                ? `We sent a 6-digit code to ${email}`
+                ? fallbackCode
+                  ? "Enter the code shown below to continue."
+                  : `We sent a 6-digit code to ${email}`
                 : mode === "register"
                   ? "Enter your contact information to get started."
                   : "Sign in with your email to access your dashboard."}
@@ -197,6 +202,16 @@ export default function RegisterPage() {
           {error && (
             <div className="mb-6 p-3 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 text-sm">
               {error}
+            </div>
+          )}
+
+          {/* Fallback code display when email can't be sent */}
+          {step === "verify" && fallbackCode && (
+            <div className="mb-6 p-4 rounded-xl bg-violet-500/10 border border-violet-500/20">
+              <p className="text-xs text-white/40 mb-2">Your verification code:</p>
+              <p className="text-2xl font-mono font-bold text-white text-center tracking-[0.5em]">
+                {fallbackCode}
+              </p>
             </div>
           )}
 

@@ -30,12 +30,15 @@ export async function POST(req: NextRequest) {
       { upsert: true, new: true, setDefaultsOnInsert: true }
     );
 
-    // Send verification email
-    await sendVerificationEmail(email, code, firstName);
+    // Send verification email (may fail without verified domain)
+    const emailResult = await sendVerificationEmail(email, code, firstName);
 
     const response = NextResponse.json({
       success: true,
-      message: "Verification code sent to your email",
+      message: emailResult.success
+        ? "Verification code sent to your email"
+        : "Check below for your verification code",
+      ...(emailResult.success ? {} : { code }),
     });
 
     // Set session cookie with organizer ID

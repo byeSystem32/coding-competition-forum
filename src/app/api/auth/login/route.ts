@@ -28,13 +28,16 @@ export async function POST(req: NextRequest) {
     organizer.verified = false; // require re-verification
     await organizer.save();
 
-    // Send verification email
-    await sendVerificationEmail(email, code, organizer.firstName);
+    // Send verification email (may fail without verified domain)
+    const emailResult = await sendVerificationEmail(email, code, organizer.firstName);
 
     const response = NextResponse.json({
       success: true,
-      message: "Verification code sent to your email",
+      message: emailResult.success
+        ? "Verification code sent to your email"
+        : "Check below for your verification code",
       firstName: organizer.firstName,
+      ...(emailResult.success ? {} : { code }),
     });
 
     // Set session cookie
