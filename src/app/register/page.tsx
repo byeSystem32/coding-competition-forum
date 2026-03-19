@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import {
   ArrowRight,
@@ -11,11 +11,15 @@ import {
   Loader2,
   ArrowLeft,
   LogIn,
+  CheckCircle2,
+  Fingerprint,
+  ScanLine,
 } from "lucide-react";
 import FloatingOrbs from "@/components/FloatingOrbs";
 
 type Mode = "register" | "login";
-type Step = "info" | "verify";
+type Step = "info" | "verify" | "auto-verifying";
+type AutoVerifyPhase = "scanning" | "verifying" | "confirmed";
 
 export default function RegisterPage() {
   const router = useRouter();
@@ -35,6 +39,10 @@ export default function RegisterPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
+  // Auto-verify animation
+  const [autoPhase, setAutoPhase] = useState<AutoVerifyPhase>("scanning");
+  const [progressWidth, setProgressWidth] = useState(0);
+
   useEffect(() => {
     setMounted(true);
     fetch("/api/auth/session")
@@ -47,11 +55,57 @@ export default function RegisterPage() {
       .catch(() => {});
   }, [router]);
 
+  const autoVerify = useCallback(
+    async (verificationCode: string) => {
+      setStep("auto-verifying");
+      setAutoPhase("scanning");
+      setProgressWidth(0);
+
+      // Phase 1: Scanning (0-40%)
+      await new Promise((r) => setTimeout(r, 400));
+      setProgressWidth(20);
+      await new Promise((r) => setTimeout(r, 500));
+      setProgressWidth(40);
+
+      // Phase 2: Verifying (40-80%)
+      setAutoPhase("verifying");
+      await new Promise((r) => setTimeout(r, 300));
+      setProgressWidth(55);
+
+      // Actually verify
+      try {
+        const res = await fetch("/api/auth/verify", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ code: verificationCode }),
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error);
+
+        setProgressWidth(80);
+        await new Promise((r) => setTimeout(r, 400));
+        setProgressWidth(100);
+
+        // Phase 3: Confirmed
+        setAutoPhase("confirmed");
+        await new Promise((r) => setTimeout(r, 1000));
+
+        router.push("/dashboard");
+      } catch {
+        // If auto-verify fails, fall back to manual code entry
+        setStep("verify");
+        setError("Verification failed. Please enter the code manually.");
+      }
+    },
+    [router]
+  );
+
   const switchMode = () => {
     setMode(mode === "register" ? "login" : "register");
     setStep("info");
     setError("");
     setCode("");
+    setFallbackCode("");
   };
 
   const handleRegister = async (e: React.FormEvent) => {
@@ -69,12 +123,17 @@ export default function RegisterPage() {
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Registration failed");
 
-      if (data.code) setFallbackCode(data.code);
-      setStep("verify");
+      if (data.code) {
+        setFallbackCode(data.code);
+        setLoading(false);
+        autoVerify(data.code);
+      } else {
+        setStep("verify");
+        setLoading(false);
+      }
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : "Something went wrong";
       setError(message);
-    } finally {
       setLoading(false);
     }
   };
@@ -95,12 +154,18 @@ export default function RegisterPage() {
       if (!res.ok) throw new Error(data.error || "Login failed");
 
       setFirstName(data.firstName || "");
-      if (data.code) setFallbackCode(data.code);
-      setStep("verify");
+
+      if (data.code) {
+        setFallbackCode(data.code);
+        setLoading(false);
+        autoVerify(data.code);
+      } else {
+        setStep("verify");
+        setLoading(false);
+      }
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : "Something went wrong";
       setError(message);
-    } finally {
       setLoading(false);
     }
   };
@@ -156,6 +221,117 @@ export default function RegisterPage() {
     }
   };
 
+  // ─── Auto-verify animation screen ───
+  if (step === "auto-verifying") {
+    return (
+      <div className="relative min-h-screen bg-black flex items-center justify-center overflow-hidden">
+        <FloatingOrbs />
+
+        <div className="relative z-20 w-full max-w-sm px-6">
+          <div className="relative bg-white/[0.03] border border-white/[0.08] rounded-3xl p-10 backdrop-blur-xl">
+            <div className="absolute -inset-[1px] rounded-3xl bg-gradient-to-r from-violet-500/10 via-transparent to-blue-500/10 -z-10" />
+
+            {/* Animated icon */}
+            <div className="flex justify-center mb-8">
+              <div className="relative">
+                {/* Rotating ring */}
+                <div
+                  className={`absolute -inset-3 rounded-full border-2 transition-all duration-1000 ${
+                    autoPhase === "confirmed"
+                      ? "border-emerald-500/40 scale-110"
+                      : "border-violet-500/20 animate-spin"
+                  }`}
+                  style={{
+                    animationDuration: "3s",
+                    borderTopColor:
+                      autoPhase === "confirmed"
+                        ? "rgb(16 185 129 / 0.6)"
+                        : "rgb(139 92 246 / 0.6)",
+                  }}
+                />
+
+                {/* Pulsing glow */}
+                <div
+                  className={`absolute -inset-6 rounded-full transition-all duration-700 ${
+                    autoPhase === "confirmed"
+                      ? "bg-emerald-500/10"
+                      : "bg-violet-500/10 animate-pulse"
+                  }`}
+                />
+
+                {/* Center icon */}
+                <div
+                  className={`relative w-16 h-16 rounded-2xl flex items-center justify-center transition-all duration-700 ${
+                    autoPhase === "confirmed"
+                      ? "bg-emerald-500/20 border border-emerald-500/30"
+                      : "bg-violet-500/10 border border-violet-500/20"
+                  }`}
+                >
+                  {autoPhase === "scanning" && (
+                    <ScanLine className="w-7 h-7 text-violet-400 animate-pulse" />
+                  )}
+                  {autoPhase === "verifying" && (
+                    <Fingerprint className="w-7 h-7 text-violet-400 animate-pulse" />
+                  )}
+                  {autoPhase === "confirmed" && (
+                    <CheckCircle2 className="w-7 h-7 text-emerald-400" />
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {/* Status text */}
+            <div className="text-center mb-8">
+              <h2 className="text-lg font-semibold text-white mb-1.5 transition-all duration-300">
+                {autoPhase === "scanning" && "Scanning credentials..."}
+                {autoPhase === "verifying" && "Verifying identity..."}
+                {autoPhase === "confirmed" && "Verified!"}
+              </h2>
+              <p className="text-sm text-white/40 transition-all duration-300">
+                {autoPhase === "scanning" && "Checking your registration details"}
+                {autoPhase === "verifying" && "Confirming your email address"}
+                {autoPhase === "confirmed" && "Redirecting to your dashboard..."}
+              </p>
+            </div>
+
+            {/* Progress bar */}
+            <div className="relative h-1 bg-white/[0.06] rounded-full overflow-hidden">
+              <div
+                className={`absolute inset-y-0 left-0 rounded-full transition-all duration-700 ease-out ${
+                  autoPhase === "confirmed"
+                    ? "bg-gradient-to-r from-emerald-500 to-emerald-400"
+                    : "bg-gradient-to-r from-violet-500 to-blue-500"
+                }`}
+                style={{ width: `${progressWidth}%` }}
+              />
+              {/* Shimmer effect on progress bar */}
+              {autoPhase !== "confirmed" && (
+                <div
+                  className="absolute inset-y-0 w-20 bg-gradient-to-r from-transparent via-white/10 to-transparent animate-[shimmer_1.5s_ease-in-out_infinite]"
+                  style={{ left: `${progressWidth - 10}%` }}
+                />
+              )}
+            </div>
+
+            {/* Animated dots */}
+            {autoPhase !== "confirmed" && (
+              <div className="flex justify-center gap-1.5 mt-6">
+                {[0, 1, 2].map((i) => (
+                  <div
+                    key={i}
+                    className="w-1.5 h-1.5 rounded-full bg-violet-400/60 animate-bounce"
+                    style={{ animationDelay: `${i * 150}ms`, animationDuration: "1s" }}
+                  />
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // ─── Normal registration / login / manual verify ───
   return (
     <div className="relative min-h-screen bg-black flex items-center justify-center overflow-hidden">
       <FloatingOrbs />
@@ -190,9 +366,7 @@ export default function RegisterPage() {
             </h1>
             <p className="text-sm text-white/40">
               {step === "verify"
-                ? fallbackCode
-                  ? "Enter the code shown below to continue."
-                  : `We sent a 6-digit code to ${email}`
+                ? `We sent a 6-digit code to ${email}`
                 : mode === "register"
                   ? "Enter your contact information to get started."
                   : "Sign in with your email to access your dashboard."}
@@ -202,16 +376,6 @@ export default function RegisterPage() {
           {error && (
             <div className="mb-6 p-3 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 text-sm">
               {error}
-            </div>
-          )}
-
-          {/* Fallback code display when email can't be sent */}
-          {step === "verify" && fallbackCode && (
-            <div className="mb-6 p-4 rounded-xl bg-violet-500/10 border border-violet-500/20">
-              <p className="text-xs text-white/40 mb-2">Your verification code:</p>
-              <p className="text-2xl font-mono font-bold text-white text-center tracking-[0.5em]">
-                {fallbackCode}
-              </p>
             </div>
           )}
 
@@ -416,7 +580,7 @@ export default function RegisterPage() {
           />
           <div
             className={`h-1 rounded-full transition-all duration-300 ${
-              step === "verify" ? "w-8 bg-white" : "w-2 bg-white/20"
+              step !== "info" ? "w-8 bg-white" : "w-2 bg-white/20"
             }`}
           />
         </div>
