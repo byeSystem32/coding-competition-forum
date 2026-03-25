@@ -1,6 +1,6 @@
 "use client";
 
-import { Trash2, User, GraduationCap, Mail, UtensilsCrossed } from "lucide-react";
+import { Trash2, Pencil, User, GraduationCap, Mail, UtensilsCrossed } from "lucide-react";
 
 interface ParticipantCardProps {
   participant: {
@@ -13,9 +13,10 @@ interface ParticipantCardProps {
     teamColor: string;
   };
   onDelete: (id: string) => void;
+  onEdit: (participant: ParticipantCardProps["participant"]) => void;
 }
 
-export default function ParticipantCard({ participant, onDelete }: ParticipantCardProps) {
+export default function ParticipantCard({ participant, onDelete, onEdit }: ParticipantCardProps) {
   return (
     <div
       className="group relative rounded-2xl border border-white/10 bg-white/[0.03] backdrop-blur-sm p-5 transition-all duration-300 hover:bg-white/[0.06] hover:border-white/20 animate-scale-in"
@@ -29,13 +30,21 @@ export default function ParticipantCard({ participant, onDelete }: ParticipantCa
         style={{ backgroundColor: participant.teamColor }}
       />
 
-      {/* Delete button */}
-      <button
-        onClick={() => onDelete(participant._id)}
-        className="absolute top-3 right-3 w-7 h-7 rounded-lg bg-white/5 hover:bg-red-500/20 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all"
-      >
-        <Trash2 className="w-3.5 h-3.5 text-white/40 group-hover:text-red-400" />
-      </button>
+      {/* Action buttons */}
+      <div className="absolute top-3 right-3 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-all">
+        <button
+          onClick={() => onEdit(participant)}
+          className="w-7 h-7 rounded-lg bg-white/5 hover:bg-violet-500/20 flex items-center justify-center transition-all"
+        >
+          <Pencil className="w-3.5 h-3.5 text-white/40 hover:text-violet-400" />
+        </button>
+        <button
+          onClick={() => onDelete(participant._id)}
+          className="w-7 h-7 rounded-lg bg-white/5 hover:bg-red-500/20 flex items-center justify-center transition-all"
+        >
+          <Trash2 className="w-3.5 h-3.5 text-white/40 hover:text-red-400" />
+        </button>
+      </div>
 
       {/* Name */}
       <div className="flex items-center gap-2 mb-3">

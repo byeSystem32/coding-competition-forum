@@ -160,12 +160,9 @@ function CheckoutContent() {
             <PartyPopper className="w-10 h-10 text-emerald-400" />
           </div>
           <h1 className="text-3xl font-bold text-white mb-3">You&apos;re All Set!</h1>
-          <p className="text-white/40 mb-2 max-w-md">
+          <p className="text-white/40 mb-8 max-w-md">
             Payment confirmed for {participants.length} participant
             {participants.length !== 1 ? "s" : ""} from {organizer?.schoolName}.
-          </p>
-          <p className="text-white/30 text-sm mb-8">
-            A confirmation email has been sent to {organizer?.email}.
           </p>
           <button
             onClick={() => router.push("/dashboard")}
@@ -191,11 +188,8 @@ function CheckoutContent() {
             {participants.length} participant
             {participants.length !== 1 ? "s" : ""} from {organizer?.schoolName} registered.
           </p>
-          <p className="text-amber-400/70 text-sm mb-2 font-medium">
+          <p className="text-amber-400/70 text-sm mb-8 font-medium">
             Payment pending — please pay before the event.
-          </p>
-          <p className="text-white/30 text-sm mb-8">
-            A confirmation email has been sent to {organizer?.email}.
           </p>
           <button
             onClick={() => router.push("/dashboard")}

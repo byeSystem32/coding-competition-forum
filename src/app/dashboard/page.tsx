@@ -12,6 +12,7 @@ import {
 import FloatingOrbs from "@/components/FloatingOrbs";
 import ParticipantCard from "@/components/ParticipantCard";
 import AddParticipantModal from "@/components/AddParticipantModal";
+import EditParticipantModal from "@/components/EditParticipantModal";
 
 interface Participant {
   _id: string;
@@ -40,6 +41,7 @@ export default function DashboardPage() {
   const [participants, setParticipants] = useState<Participant[]>([]);
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
+  const [editingParticipant, setEditingParticipant] = useState<Participant | null>(null);
 
   const fetchData = useCallback(async () => {
     try {
@@ -95,6 +97,27 @@ export default function DashboardPage() {
     if (res.ok) {
       setParticipants((prev) => prev.filter((p) => p._id !== id));
     }
+  };
+
+  const handleEditParticipant = async (id: string, data: {
+    name: string;
+    gradeLevel: string;
+    email: string;
+    dietaryRestriction: string;
+    teamName: string;
+  }) => {
+    const res = await fetch(`/api/participants/${id}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(data),
+    });
+
+    const result = await res.json();
+    if (!res.ok) throw new Error(result.error);
+
+    setParticipants((prev) =>
+      prev.map((p) => (p._id === id ? result.participant : p))
+    );
   };
 
   const handleLogout = async () => {
@@ -184,6 +207,7 @@ export default function DashboardPage() {
               key={participant._id}
               participant={participant}
               onDelete={handleDeleteParticipant}
+              onEdit={setEditingParticipant}
             />
           ))}
 
@@ -229,6 +253,16 @@ export default function DashboardPage() {
         <AddParticipantModal
           onClose={() => setShowModal(false)}
           onAdd={handleAddParticipant}
+          existingTeams={existingTeams}
+        />
+      )}
+
+      {/* Edit Participant Modal */}
+      {editingParticipant && (
+        <EditParticipantModal
+          participant={editingParticipant}
+          onClose={() => setEditingParticipant(null)}
+          onSave={handleEditParticipant}
           existingTeams={existingTeams}
         />
       )}
