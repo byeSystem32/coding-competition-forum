@@ -12,7 +12,7 @@ export async function GET(req: NextRequest) {
     }
 
     const organizer = await Organizer.findById(sessionId).select(
-      "email firstName lastName schoolName verified paid"
+      "email firstName lastName schoolName verified paid paymentMethod"
     );
 
     if (!organizer) {
@@ -29,6 +29,7 @@ export async function GET(req: NextRequest) {
         schoolName: organizer.schoolName,
         verified: organizer.verified,
         paid: organizer.paid,
+        paymentMethod: organizer.paymentMethod || null,
       },
     });
   } catch (error: unknown) {

@@ -55,8 +55,9 @@ export async function POST(req: NextRequest) {
       },
     });
 
-    // Store session ID
+    // Store session ID and payment method
     organizer.stripeSessionId = session.id;
+    organizer.paymentMethod = "stripe";
     await organizer.save();
 
     return NextResponse.json({ url: session.url });

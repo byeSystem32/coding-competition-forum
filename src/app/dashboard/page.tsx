@@ -31,6 +31,7 @@ interface Organizer {
   schoolName: string;
   verified: boolean;
   paid: boolean;
+  paymentMethod?: "stripe" | "pay_later" | null;
 }
 
 export default function DashboardPage() {

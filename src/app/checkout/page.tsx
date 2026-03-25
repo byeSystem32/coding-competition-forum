@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import {
   ArrowLeft,
   CreditCard,
+  Clock,
   Users,
   CheckCircle2,
   Loader2,
@@ -28,6 +29,7 @@ interface Organizer {
   schoolName: string;
   email: string;
   paid: boolean;
+  paymentMethod?: "stripe" | "pay_later" | null;
 }
 
 export default function CheckoutPage() {
@@ -51,7 +53,9 @@ function CheckoutContent() {
   const [participants, setParticipants] = useState<Participant[]>([]);
   const [loading, setLoading] = useState(true);
   const [paying, setPaying] = useState(false);
+  const [payingLater, setPayingLater] = useState(false);
   const [success, setSuccess] = useState(false);
+  const [payLaterSuccess, setPayLaterSuccess] = useState(false);
 
   const fetchData = useCallback(async () => {
     try {
@@ -109,6 +113,24 @@ function CheckoutContent() {
     }
   };
 
+  const handlePayLater = async () => {
+    setPayingLater(true);
+    try {
+      const res = await fetch("/api/checkout/pay-later", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+      });
+
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error);
+
+      setPayLaterSuccess(true);
+    } catch (err) {
+      console.error("Pay later error:", err);
+      setPayingLater(false);
+    }
+  };
+
   const teamGroups = participants.reduce(
     (acc, p) => {
       if (!acc[p.teamName]) acc[p.teamName] = { color: p.teamColor, members: [] };
@@ -140,6 +162,36 @@ function CheckoutContent() {
           <p className="text-white/40 mb-2 max-w-md">
             Payment confirmed for {participants.length} participant
             {participants.length !== 1 ? "s" : ""} from {organizer?.schoolName}.
+          </p>
+          <p className="text-white/30 text-sm mb-8">
+            A confirmation email has been sent to {organizer?.email}.
+          </p>
+          <button
+            onClick={() => router.push("/dashboard")}
+            className="inline-flex items-center gap-2 px-6 py-3 bg-white text-black font-semibold rounded-xl hover:bg-white/90 transition-all"
+          >
+            Back to Dashboard
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  if (payLaterSuccess) {
+    return (
+      <div className="relative min-h-screen bg-black flex items-center justify-center overflow-hidden">
+        <FloatingOrbs />
+        <div className="relative z-20 text-center px-6 animate-fade-in">
+          <div className="w-20 h-20 rounded-full bg-amber-500/10 border border-amber-500/20 flex items-center justify-center mx-auto mb-6">
+            <Clock className="w-10 h-10 text-amber-400" />
+          </div>
+          <h1 className="text-3xl font-bold text-white mb-3">Registration Confirmed!</h1>
+          <p className="text-white/40 mb-2 max-w-md">
+            {participants.length} participant
+            {participants.length !== 1 ? "s" : ""} from {organizer?.schoolName} registered.
+          </p>
+          <p className="text-amber-400/70 text-sm mb-2 font-medium">
+            Payment pending — please pay before the event.
           </p>
           <p className="text-white/30 text-sm mb-8">
             A confirmation email has been sent to {organizer?.email}.
@@ -270,7 +322,7 @@ function CheckoutContent() {
         {/* Pay Button */}
         <button
           onClick={handlePay}
-          disabled={paying || participants.length === 0}
+          disabled={paying || payingLater || participants.length === 0}
           className="w-full py-4 bg-white text-black font-semibold rounded-2xl hover:bg-white/90 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-3 text-lg shadow-[0_0_40px_rgba(255,255,255,0.1)]"
         >
           {paying ? (
@@ -288,6 +340,33 @@ function CheckoutContent() {
           <CheckCircle2 className="w-3 h-3 text-white/20" />
           <span className="text-xs text-white/20">Secured by Stripe</span>
         </div>
+
+        {/* Divider */}
+        <div className="flex items-center gap-4 my-6">
+          <div className="flex-1 border-t border-white/[0.08]" />
+          <span className="text-xs text-white/30 uppercase tracking-wider">or</span>
+          <div className="flex-1 border-t border-white/[0.08]" />
+        </div>
+
+        {/* Pay Later Button */}
+        <button
+          onClick={handlePayLater}
+          disabled={paying || payingLater || participants.length === 0}
+          className="w-full py-4 bg-transparent text-white/70 font-semibold rounded-2xl border border-white/[0.12] hover:bg-white/[0.05] hover:border-white/[0.2] transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-3 text-lg"
+        >
+          {payingLater ? (
+            <Loader2 className="w-5 h-5 animate-spin" />
+          ) : (
+            <>
+              <Clock className="w-5 h-5" />
+              Pay Later
+            </>
+          )}
+        </button>
+
+        <p className="text-center text-xs text-white/25 mt-3">
+          Choose &quot;Pay Later&quot; to complete registration now and pay before the event.
+        </p>
       </div>
     </div>
   );

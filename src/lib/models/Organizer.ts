@@ -9,6 +9,7 @@ export interface IOrganizer extends Document {
   codeExpiresAt: Date;
   verified: boolean;
   paid: boolean;
+  paymentMethod?: "stripe" | "pay_later";
   stripeSessionId?: string;
   createdAt: Date;
   updatedAt: Date;
@@ -24,6 +25,7 @@ const OrganizerSchema = new Schema<IOrganizer>(
     codeExpiresAt: { type: Date, required: true },
     verified: { type: Boolean, default: false },
     paid: { type: Boolean, default: false },
+    paymentMethod: { type: String, enum: ["stripe", "pay_later"] },
     stripeSessionId: { type: String },
   },
   { timestamps: true }
