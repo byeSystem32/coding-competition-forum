@@ -140,7 +140,8 @@ function CheckoutContent() {
     {} as Record<string, { color: string; members: Participant[] }>
   );
 
-  const totalCost = participants.length * 10;
+  const teamCount = Object.keys(teamGroups).length;
+  const totalCost = teamCount * 40;
 
   if (loading) {
     return (
@@ -250,10 +251,11 @@ function CheckoutContent() {
                       style={{ backgroundColor: color }}
                     />
                     <h3 className="font-semibold text-white">{teamName}</h3>
+                    <span className="text-sm text-white/40">
+                      {members.length} member{members.length !== 1 ? "s" : ""}
+                    </span>
                   </div>
-                  <span className="text-sm text-white/40">
-                    {members.length} member{members.length !== 1 ? "s" : ""}
-                  </span>
+                  <span className="text-sm font-medium text-white/60">$40.00</span>
                 </div>
               </div>
 
@@ -281,7 +283,6 @@ function CheckoutContent() {
                         </p>
                       </div>
                     </div>
-                    <span className="text-sm text-white/50">$10.00</span>
                   </div>
                 ))}
               </div>
@@ -299,13 +300,17 @@ function CheckoutContent() {
             <div className="flex justify-between text-sm">
               <span className="text-white/50 flex items-center gap-2">
                 <Users className="w-4 h-4" />
-                Participants
+                Teams
               </span>
+              <span className="text-white">{teamCount}</span>
+            </div>
+            <div className="flex justify-between text-sm">
+              <span className="text-white/50">Participants</span>
               <span className="text-white">{participants.length}</span>
             </div>
             <div className="flex justify-between text-sm">
-              <span className="text-white/50">Price per student</span>
-              <span className="text-white">$10.00</span>
+              <span className="text-white/50">Price per team</span>
+              <span className="text-white">$40.00</span>
             </div>
           </div>
 

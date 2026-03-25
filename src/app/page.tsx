@@ -63,7 +63,7 @@ export default function LandingPage() {
         </button>
 
         {/* Price tag */}
-        <p className="mt-6 text-sm text-white/30">$10 per participant</p>
+        <p className="mt-6 text-sm text-white/30">$40 per team</p>
       </div>
 
       {/* Wave */}

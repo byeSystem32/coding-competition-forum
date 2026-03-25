@@ -30,6 +30,10 @@ export async function POST(req: NextRequest) {
 
     const appUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
 
+    // Count unique teams
+    const teamNames = [...new Set(participants.map((p: { teamName: string }) => p.teamName))];
+    const teamCount = teamNames.length;
+
     // Create Stripe Checkout Session
     const session = await stripe.checkout.sessions.create({
       payment_method_types: ["card"],
@@ -39,11 +43,11 @@ export async function POST(req: NextRequest) {
             currency: "usd",
             product_data: {
               name: "CSN 2026 Coding Challenge Registration",
-              description: `${participants.length} participant${participants.length > 1 ? "s" : ""} from ${organizer.schoolName}`,
+              description: `${teamCount} team${teamCount > 1 ? "s" : ""} (${participants.length} participant${participants.length > 1 ? "s" : ""}) from ${organizer.schoolName}`,
             },
-            unit_amount: 1000, // $10 in cents
+            unit_amount: 4000, // $40 in cents
           },
-          quantity: participants.length,
+          quantity: teamCount,
         },
       ],
       mode: "payment",
