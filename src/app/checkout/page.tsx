@@ -189,7 +189,7 @@ function CheckoutContent() {
             {participants.length !== 1 ? "s" : ""} from {organizer?.schoolName} registered.
           </p>
           <p className="text-amber-400/70 text-sm mb-8 font-medium">
-            Payment pending — please pay before the event.
+            Payment will be collected at the door — cash, check, or other forms accepted.
           </p>
           <button
             onClick={() => router.push("/dashboard")}
@@ -347,7 +347,7 @@ function CheckoutContent() {
           <div className="flex-1 border-t border-white/[0.08]" />
         </div>
 
-        {/* Pay Later Button */}
+        {/* Pay at Door Button */}
         <button
           onClick={handlePayLater}
           disabled={paying || payingLater || participants.length === 0}
@@ -358,13 +358,13 @@ function CheckoutContent() {
           ) : (
             <>
               <Clock className="w-5 h-5" />
-              Pay Later
+              Pay at Door
             </>
           )}
         </button>
 
         <p className="text-center text-xs text-white/25 mt-3">
-          Choose &quot;Pay Later&quot; to complete registration now and pay before the event.
+          Choose &quot;Pay at Door&quot; to complete registration now and pay with cash, check, or other form at the event.
         </p>
       </div>
     </div>
